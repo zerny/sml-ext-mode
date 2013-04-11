@@ -1,0 +1,4 @@
+*~
+*.elc
+sml-ext-mode-*.tar
+sml-ext-mode-*/
