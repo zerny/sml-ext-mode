@@ -47,7 +47,7 @@ directory."
 
 (defgroup sml-ext-faces nil
   "Extra faces for the extended SML mode"
-  :group 'SML)
+  :group 'sml)
 
 (defface sml-ext-faces-locked
   '((t (:background "slate gray")))
@@ -56,13 +56,13 @@ directory."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar sml-ext-buffer-loaded
-  "Set to t if the buffer is loaded, nil otherwise."
-  nil)
+  nil
+  "Set to t if the buffer is loaded, nil otherwise.")
 
 (defvar sml-ext-hole-list
+  nil
   "List all the hole start- and end-points (as markers). Only makes
-sense if `sml-ext-buffer-loaded' is t."
-  nil)
+sense if `sml-ext-buffer-loaded' is t.")
 
 (defun sml-ext-next-hole ()
   "Move cursor to the next hole."
