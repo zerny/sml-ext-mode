@@ -41,18 +41,90 @@ directory."
       (unload-feature 'sml-ext-process-backend))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Fancy syntax highlighting (holes, bindings/occurrences, constructors, types)
+
+;; (require 'annotation)
+
+(defgroup sml-ext-faces nil
+  "Extra faces for the extended SML mode"
+  :group 'SML)
+
+(defface sml-ext-faces-locked
+  '((t (:background "slate gray")))
+  :group 'sml-ext-faces)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar sml-ext-buffer-loaded
+  "Set to t if the buffer is loaded, nil otherwise."
+  nil)
+
+(defvar sml-ext-hole-list
+  "List all the hole start- and end-points (as markers). Only makes
+sense if `sml-ext-buffer-loaded' is t."
+  nil)
 
 (defun sml-ext-next-hole ()
   "Move cursor to the next hole."
   (interactive)
-  (message "sml-ext-next-hole"))
+  (message "sml-ext-next-hole")
+  (when sml-ext-buffer-loaded
+    (let ((holes sml-ext-hole-list)
+          (moved nil))
+      (while (and (not (null holes)) (not moved))
+        (let ((nexth (caar holes)))
+          (if (< (point) nexth)
+              (progn
+                (goto-char nexth)
+                (setq moved 't))
+            (setq holes (cdr holes)))))
+      (if (and (not moved) (not (null sml-ext-hole-list)))
+          (goto-char (caar sml-ext-hole-list))))))
 
 (defun sml-ext-prev-hole ()
   "Move cursor to the next hole."
   (interactive)
-  (message "sml-ext-prev-hole"))
+  (message "sml-ext-prev-hole")
+  (when (and sml-ext-buffer-loaded (not (null sml-ext-hole-list)))
+    (if (<= (point) (cdar sml-ext-hole-list))
+        (goto-char (caar (last sml-ext-hole-list)))
+      (let ((holes (cdr sml-ext-hole-list))
+            (lasth (caar sml-ext-hole-list)))
+        (while (and (not (null holes)) (> (point) (cdar holes)))
+          (setq lasth (caar holes)
+                holes (cdr holes)))
+        (goto-char lasth)))))
 
 (defun sml-ext-load-buffer ()
   "Load the buffer."
   (interactive)
-  (sml-ext-process-load-buffer))
+  (when (sml-ext-process-load-buffer)
+    (setq sml-ext-buffer-loaded t)
+    (let ((lock-overlay (make-overlay (point-min) (point-max)))
+          (hook (lambda (&rest unused)
+                  (remove-overlays (point-min) (point-max) 'name 'sml-ext-lock)
+                  ;; TODO: does this really kill the overlay?
+                  (setq sml-ext-hole-list nil
+                        sml-ext-buffer-loaded nil))))
+      (overlay-put lock-overlay 'name 'sml-ext-lock)
+      (overlay-put lock-overlay 'face 'sml-ext-faces-locked)
+      (overlay-put lock-overlay 'modification-hooks (list hook))
+      (overlay-put lock-overlay 'insert-in-front-hooks
+                   (list (lambda (ov post start end &rest unused)
+                           (when (equal (point-min) start)
+                             (remove-overlays (point-min) (point-max) 'name 'sml-ext-lock)
+                             (when (equal post 't)
+                               (remove-overlays start end 'name 'sml-ext-lock))))))
+      (overlay-put lock-overlay 'insert-behind-hooks
+                   (list (lambda (ov post start end &rest unused)
+                           (when (equal end (point-max))
+                             (remove-overlays (point-min) (point-max) 'name 'sml-ext-lock))))))
+    (let ((holes (sml-ext-process-holes))
+          (doit (lambda (hole)
+                  (let ((new-start (make-marker))
+                        (new-end (make-marker)))
+                    (set-marker new-start (car hole))
+                    (set-marker new-end (cdr hole))
+                    (remove-overlays new-start new-end 'name 'sml-ext-lock)
+                    (cons new-start new-end)))))
+      (setq sml-ext-hole-list (mapcar doit holes)))))
