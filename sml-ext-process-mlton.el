@@ -1,4 +1,4 @@
-;;; sml-ext-process-mlton.el -*- mode: emacs-lisp; lexical-binding: t -*-
+;;; sml-ext-process-mlton.el -*- lexical-binding: t; indent-tabs-mode: nil; -*-
 
 ;;; This file provides a file-based process backend using the
 ;;; 'show-def-use' flag of the MLton compilers to generate type

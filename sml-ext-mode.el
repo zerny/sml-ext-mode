@@ -1,4 +1,4 @@
-;;; sml-ext-mode.el -*- mode: emacs-lisp; lexical-binding: t -*-
+;;; sml-ext-mode.el -*- lexical-binding: t; indent-tabs-mode: nil; -*-
 
 ;;;###autoload
 (define-minor-mode sml-ext-mode
@@ -28,7 +28,7 @@ directory."
   (interactive)
   (compile "make -k package")
   (set-process-sentinel (get-process "compilation")
-			'sml-ext-on-recompile))
+                        'sml-ext-on-recompile))
 
 (defun sml-ext-on-recompile (process event)
   (princ
